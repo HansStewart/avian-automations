@@ -1,0 +1,737 @@
+{
+  "name": "[AVIAN] Behavioral Re-Engagement System v1.0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0d8544d5-91b8-4c50-a675-11af664fb55e",
+      "name": "Daily 5AM Scan"
+    },
+    {
+      "parameters": {
+        "content": "Daily behavioral scan — runs at 5AM before the\nsales team's morning standup so the re-engagement\nqueue is ready when they log on. Monitors all\ncontacts in Proposal Sent or Demo Scheduled stages\nwith no activity in 14+ days.",
+        "height": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -208
+      ],
+      "id": "eb4f7ee7-d2f0-4064-bf78-04ddf00af298",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appdZYGSQGidae9Pf",
+          "mode": "list",
+          "cachedResultName": "AVIAN Re-Engagement System",
+          "cachedResultUrl": "https://airtable.com/appdZYGSQGidae9Pf"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblkjBnOtFXOGtvc9",
+          "mode": "list",
+          "cachedResultName": "Contact Pipeline",
+          "cachedResultUrl": "https://airtable.com/appdZYGSQGidae9Pf/tblkjBnOtFXOGtvc9"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a33bd0fd-d29e-4781-97d0-c6f203ac677e",
+      "name": "Get Cold Contacts — Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aP5kBCfMlub7FHmr",
+          "name": "AVIAN Airtable Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a re-engagement scoring analyst for AVIAN, an AI-powered thermal camera and fire prevention company targeting industrial manufacturers.\n\nScore this contact's re-engagement likelihood on 0-10 based on the data below.\n\nContact Name: {{ $json['fields']['Contact Name'] }}\nCompany: {{ $json['fields']['Company'] }}\nTitle: {{ $json['fields']['Title'] }}\nIndustry: {{ $json['fields']['Industry'] }}\nDeal Stage: {{ $json['fields']['Deal Stage'] }}\nDays Since Activity: {{ $json['fields']['Days Since Activity'] }}\nDeal Value: {{ $json['fields']['Deal Value'] }}\nLast Interaction: {{ $json['fields']['Last Interaction'] }}\n\nReturn ONLY valid JSON with no extra text:\n{\n  \"re_engagement_score\": 0,\n  \"priority\": \"Immediate\",\n  \"recommended_channel\": \"Email\",\n  \"recommended_angle\": \"one sentence outreach angle specific to their industry and role\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        0
+      ],
+      "id": "a2b8519f-e303-4f9d-9eb1-fa6b17dab62d",
+      "name": "Re-Engagement Scoring Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a JSON-only API. You must respond with a single raw JSON object.\nDo NOT include any explanation, greeting, preamble, markdown, or text before or after the JSON.\nYour entire response must start with { and end with }.\n\nYou are an outbound copywriter for AVIAN, an AI-powered thermal camera and fire prevention company targeting industrial manufacturers.\n\nWrite a personalized re-engagement email for:\nContact: {{ $json['fields']['Contact Name'] }}\nCompany: {{ $json['fields']['Company'] }}\nTitle: {{ $json['fields']['Title'] }}\nIndustry: {{ $json['fields']['Industry'] }}\nDeal Stage: {{ $json['fields']['Deal Stage'] }}\nDays Since Last Contact: {{ $json['fields']['Days Since Activity'] }}\nRecommended angle: {{ $('Parse Scoring Output').item.json.recommended_angle }}\nRe-Engagement Score: {{ $('Parse Scoring Output').item.json.re_engagement_score }}/10\nPriority: {{ $('Parse Scoring Output').item.json.priority }}\n\nRequirements:\n- 3-4 sentences maximum\n- Reference something specific about their industry or role\n- Soft CTA — offer insight or ask a question, don't pitch\n- No \"checking in\" or \"circling back\" language\n- No \"hope you're well\"\n\nReturn ONLY this exact JSON structure, nothing else:\n{\n  \"subject_line\": \"email subject line here\",\n  \"email_body\": \"full email body here\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "a8dfaa92-d870-435d-ab0f-5b9a38574e59",
+      "name": "Personalized Outreach Copy Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -480
+      ],
+      "id": "dcf97271-70af-45c8-bde6-688e28db4441",
+      "name": "Workflow Error Handler"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Summarize this workflow error in plain English for a non-technical ops manager:\nError: {{ $json.error.message }}\nNode: {{ $json.error.node.name }}\nSuggest one likely fix in one sentence."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -272,
+        -480
+      ],
+      "id": "dda7cf4e-ef2d-4048-8d1c-f3b453dba191",
+      "name": "Error Summarizer Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Error handling layer — any failure in the main workflow\nroutes here. AI summarizes the error in plain English\nand suggests a fix. Prevents silent failures and ensures\nthe ops team always knows what broke and why.",
+        "height": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -512
+      ],
+      "id": "c2ddeaf5-d789-4a03-8cb4-8dd72c5efad8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a3a3e22e-890c-4311-ac00-32849e9e4453",
+      "name": "Process Each Contact"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appdZYGSQGidae9Pf",
+          "mode": "list",
+          "cachedResultName": "AVIAN Re-Engagement System",
+          "cachedResultUrl": "https://airtable.com/appdZYGSQGidae9Pf"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblkjBnOtFXOGtvc9",
+          "mode": "list",
+          "cachedResultName": "Contact Pipeline",
+          "cachedResultUrl": "https://airtable.com/appdZYGSQGidae9Pf/tblkjBnOtFXOGtvc9"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Task Created": true,
+            "id": "={{ $('Get Cold Contacts — Airtable').item.json.id }}",
+            "Re-Engagement Score": "={{ $('Parse Scoring Output').item.json.re_engagement_score }}",
+            "Priority": "={{ $('Parse Scoring Output').item.json.priority }}",
+            "Recommended Channel": "={{ $('Parse Scoring Output').item.json.recommended_channel }}",
+            "AI Copy": "={{ $('Parse Copy Output').item.json.email_body }}",
+            "Date Triggered": "={{ $now }}",
+            "Subject Line": "=={{ $('Parse Copy Output').item.json.subject_line }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Deal Stage",
+              "displayName": "Deal Stage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Days Since Activity",
+              "displayName": "Days Since Activity",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Deal Value",
+              "displayName": "Deal Value",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Last Interaction",
+              "displayName": "Last Interaction",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Re-Engagement Score",
+              "displayName": "Re-Engagement Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Immediate",
+                  "value": "Immediate"
+                },
+                {
+                  "name": "This Week",
+                  "value": "This Week"
+                },
+                {
+                  "name": "Quarterly",
+                  "value": "Quarterly"
+                },
+                {
+                  "name": "High",
+                  "value": "High"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommended Channel",
+              "displayName": "Recommended Channel",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Copy",
+              "displayName": "AI Copy",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Task Created",
+              "displayName": "Task Created",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Triggered",
+              "displayName": "Date Triggered",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subject Line",
+              "displayName": "Subject Line",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1824,
+        0
+      ],
+      "id": "32df8408-3811-4a77-94f9-00413327f82b",
+      "name": "Update Contact — Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aP5kBCfMlub7FHmr",
+          "name": "AVIAN Airtable Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $input.first().json.output[0].content[0].text;\nraw = raw.replace(/```json\\s*/gi, '').replace(/```\\s*/gi, '').trim();\n\nconst start = raw.indexOf('{');\nconst end = raw.lastIndexOf('}');\n\nif (start === -1 || end === -1) {\n  throw new Error('No JSON object found in response: ' + raw.substring(0, 100));\n}\n\nconst jsonString = raw.substring(start, end + 1);\nconst parsed = JSON.parse(jsonString);\n\nreturn [{\n  json: {\n    re_engagement_score: parsed.re_engagement_score,\n    priority: parsed.priority,\n    recommended_channel: parsed.recommended_channel,\n    recommended_angle: parsed.recommended_angle\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        0
+      ],
+      "id": "2aec186e-7d4b-43ed-bfb7-3cd7e0eefadb",
+      "name": "Parse Scoring Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = \"\";\n\ntry {\n  raw = $input.first().json.output[0].content[0].text || \"\";\n} catch(e) {\n  // If output structure is different or missing\n  raw = $input.first().json.text || $input.first().json.output || \"\";\n}\n\nraw = raw.replace(/```json\\s*/gi, '').replace(/```\\s*/gi, '').trim();\n\nconst start = raw.indexOf('{');\nconst end = raw.lastIndexOf('}');\n\nlet subject_line = \"\";\nlet email_body = \"\";\n\nif (start !== -1 && end !== -1) {\n  try {\n    const parsed = JSON.parse(raw.substring(start, end + 1));\n    subject_line = parsed.subject_line || parsed[\"Subject Line\"] || \"\";\n    email_body = parsed.email_body || parsed[\"Email Body\"] || \"\";\n  } catch(e) {\n    email_body = raw; // fallback — store raw text if JSON parse fails\n  }\n}\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    subject_line: subject_line,\n    email_body: email_body\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        0
+      ],
+      "id": "00331b70-79fa-48f3-b51d-436ecb1e3f17",
+      "name": "Parse Copy Output"
+    },
+    {
+      "parameters": {
+        "sendTo": "hans.stewart.contact@gmail.com",
+        "subject": "=[AVIAN] Re-Engagement Workflow Error — {{ $('Workflow Error Handler').item.json.error.node.name }}",
+        "message": "=={{ $json.output[0].content[0].text }}\n\nRaw error: {{ $('Workflow Error Handler').item.json.error.message }}\nNode: {{ $('Workflow Error Handler').item.json.error.node.name }}\nTime: {{ $now }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        -480
+      ],
+      "id": "5d7f9369-bcfe-42d6-8d1b-75674bf4bcfe",
+      "name": "Alert — Workflow Error",
+      "webhookId": "bb930258-60c8-453e-a59a-fb8d9cb381db",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "T5CcMwlrQhZhf1Qr",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\nconst total = allItems.length;\nconst immediate = allItems.filter(i => i.json.priority === 'Immediate').length;\nconst thisWeek = allItems.filter(i => i.json.priority === 'This Week').length;\nconst quarterly = allItems.filter(i => i.json.priority === 'Quarterly').length;\nconst avgScore = total > 0 \n  ? (allItems.reduce((sum, i) => sum + (Number(i.json.re_engagement_score) || 0), 0) / total).toFixed(1)\n  : 0;\n\nreturn [{\n  json: {\n    total_processed: total,\n    immediate_count: immediate,\n    this_week_count: thisWeek,\n    quarterly_count: quarterly,\n    avg_re_engagement_score: avgScore,\n    run_date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -192
+      ],
+      "id": "29513701-83d6-45c4-ae8a-b8797067740e",
+      "name": "Build Daily Summary"
+    },
+    {
+      "parameters": {
+        "sendTo": "hans.stewart.contact@gmail.com",
+        "subject": "=[AVIAN] Re-Engagement Queue Ready — {{ $json.run_date }}",
+        "message": "==Good morning — your daily re-engagement scan is complete.\n\n━━━━━━━━━━━━━━━━━━━━━━\nTODAY'S QUEUE\n━━━━━━━━━━━━━━━━━━━━━━\nTotal contacts processed: {{ $json.total_processed }}\n🔴 Immediate (reach out today): {{ $json.immediate_count }}\n🟡 This Week: {{ $json.this_week_count }}\n🟢 Quarterly: {{ $json.quarterly_count }}\n\nAverage Re-Engagement Score: {{ $json.avg_re_engagement_score }}/10\n\nAll AI-generated copy is ready in Airtable.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        -192
+      ],
+      "id": "180c74c0-7e1d-40dc-a425-71bf9a401ab9",
+      "name": "Daily Re-Engagement Briefing",
+      "webhookId": "906288cb-1456-4fdc-8e90-c8d041871931",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "T5CcMwlrQhZhf1Qr",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "718e39c2-8d8c-48ef-999d-03e565fd5a47",
+              "leftValue": "={{ $json.re_engagement_score }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "9bc6bf14-9fb1-4067-a6ca-16e077b7eb4d",
+      "name": "Priority Router"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 5AM Scan": {
+      "main": [
+        [
+          {
+            "node": "Get Cold Contacts — Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Cold Contacts — Airtable": {
+      "main": [
+        [
+          {
+            "node": "Process Each Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-Engagement Scoring Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Scoring Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Personalized Outreach Copy Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Copy Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Error Summarizer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Each Contact": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Re-Engagement Scoring Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact — Airtable": {
+      "main": [
+        [
+          {
+            "node": "Process Each Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Scoring Output": {
+      "main": [
+        [
+          {
+            "node": "Priority Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Copy Output": {
+      "main": [
+        [
+          {
+            "node": "Update Contact — Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Summarizer Agent": {
+      "main": [
+        [
+          {
+            "node": "Alert — Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Summary": {
+      "main": [
+        [
+          {
+            "node": "Daily Re-Engagement Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Priority Router": {
+      "main": [
+        [
+          {
+            "node": "Personalized Outreach Copy Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Contact — Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e2d99013-4962-41a4-bd2a-e3542f853c62",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6e9e5a2998f849134584432b241a4eaeeab7205a55684dc0fdfae62f985ba0e2"
+  },
+  "id": "7Jkug8Qf3Cnh6wJ4",
+  "tags": []
+}
