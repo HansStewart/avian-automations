@@ -1,0 +1,1006 @@
+{
+  "name": "[AVIAN] Content Generation Pipeline v1.0",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "AVIAN Content Brief — AI Generation System",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Content Type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "LinkedIn Post"
+                  },
+                  {
+                    "option": "Cold Email"
+                  },
+                  {
+                    "option": "Blog Introduction"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Topic",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Audience",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Key Message",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tone",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Authoritative"
+                  },
+                  {
+                    "option": "Educational"
+                  },
+                  {
+                    "option": "Urgent"
+                  },
+                  {
+                    "option": "Technical"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "24873671-00a1-4018-b857-795ce71fc52e",
+      "name": "Content Brief Input",
+      "webhookId": "8ebacaa6-4c9c-4024-a4c1-a7d7c217b1aa"
+    },
+    {
+      "parameters": {
+        "url": "https://r.jina.ai/https://www.avian-iot.com",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1707054c-2710-48ce-bd51-59b439c188d1",
+      "name": "Scrape AVIAN Website"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        144
+      ],
+      "id": "3f2ba40a-4dd5-4b2a-a806-deefa8b94554",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a brand strategist analyzing a company's website to extract their content voice and style guidelines.\n\nAnalyze the following website content from AVIAN — an AI-powered thermal camera and fire prevention company targeting industrial manufacturers — and extract their brand voice profile.\n\nReturn ONLY a valid JSON object with no extra text:\n{\n  \"tone\": \"describe the overall tone in 5-10 words\",\n  \"vocabulary\": \"describe the vocabulary style — technical, accessible, industry-specific, etc.\",\n  \"sentence_structure\": \"short and punchy / long and detailed / mixed\",\n  \"core_themes\": [\"theme1\", \"theme2\", \"theme3\"],\n  \"avoid\": [\"thing to avoid 1\", \"thing to avoid 2\"],\n  \"target_audience_signals\": \"who the website clearly speaks to\",\n  \"brand_positioning\": \"one sentence on how AVIAN positions itself\"\n}\n\nWebsite content:\n{{ $json.data }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c300acdc-476b-414f-bd93-4b0e5611faa0",
+      "name": "Brand Voice Agent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Content Brief Input').item.json['Content Type'] }}",
+                    "rightValue": "LinkedIn Post",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5191118b-bbe8-42ce-945d-0a2b8c5bf722"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "LinkedIn"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "74c5c3e9-ccda-4928-a902-78ee525dd6bd",
+                    "leftValue": "={{ $('Content Brief Input').item.json['Content Type'] }}",
+                    "rightValue": "Cold Email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Email"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1f949b05-77ea-44c7-868b-a0f62c46f80d",
+                    "leftValue": "={{ $('Content Brief Input').item.json['Content Type'] }}",
+                    "rightValue": "Blog Introduction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Blog"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -16
+      ],
+      "id": "0042d3f8-dc3f-453c-bddf-7ba8534c9b7a",
+      "name": "Content Type Router"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a B2B LinkedIn ghostwriter for AVIAN, an AI-powered thermal camera \nand fire prevention company targeting industrial manufacturers.\n\nBrand voice guidelines:\n{{ $('Brand Voice Agent').item.json.output }}\n\nWrite a LinkedIn thought leadership post using these details:\n- Topic: {{ $('Content Brief Input').item.json['Topic'] }}\n- Target Audience: {{ $('Content Brief Input').item.json['Target Audience'] }}\n- Key Message: {{ $('Content Brief Input').item.json['Key Message'] }}\n- Tone: {{ $('Content Brief Input').item.json['Tone'] }}\n\nFormat rules:\n- Hook: 1 punchy opening line that stops the scroll\n- Problem/insight: 3-4 lines\n- AVIAN solution tie-in: 2-3 lines\n- CTA: 1 line\n- Max 3 hashtags at the end\n- No em dashes, no \"I hope this finds you well\", no corporate fluff\n- 900–1,200 characters total\n\nReturn ONLY valid JSON:\n{\n  \"content_type\": \"LinkedIn Post\",\n  \"hook\": \"the first line only\",\n  \"full_post\": \"the complete post here\",\n  \"hashtags\": [\"tag1\", \"tag2\", \"tag3\"],\n  \"character_count\": 000\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        960,
+        -384
+      ],
+      "id": "0bf0718c-7465-4a93-b7a4-6698ac0e5592",
+      "name": "LinkedIn Content Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        -240
+      ],
+      "id": "8e4bd2f2-bbe9-4175-ba38-a92ce47ce69e",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an outbound email copywriter for AVIAN, an AI-powered thermal camera \nand fire prevention company targeting industrial manufacturers.\n\nBrand voice guidelines:\n{{ $('Brand Voice Agent').item.json.output }}\n\nWrite a cold outreach email using these details:\n- Topic: {{ $('Content Brief Input').item.json['Topic'] }}\n- Target Audience: {{ $('Content Brief Input').item.json['Target Audience'] }}\n- Key Message: {{ $('Content Brief Input').item.json['Key Message'] }}\n- Tone: {{ $('Content Brief Input').item.json['Tone'] }}\n\nRules:\n- 3 subject line variants\n- Preview text under 90 characters\n- Email body: 4-6 sentences max, no fluff\n- CTA: one specific ask only\n- No \"checking in\", no \"circling back\", no \"hope you're well\"\n\nReturn ONLY valid JSON:\n{\n  \"content_type\": \"Cold Email\",\n  \"subject_lines\": [\"variant 1\", \"variant 2\", \"variant 3\"],\n  \"preview_text\": \"under 90 chars\",\n  \"body\": \"full email body\",\n  \"cta\": \"the call to action\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        960,
+        -80
+      ],
+      "id": "3f6f9cfb-a298-49a2-b9b3-9fb45ee01b97",
+      "name": "Email Content Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        64
+      ],
+      "id": "d353c535-db6d-45d0-99f3-2cbac81f445a",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a B2B content writer for AVIAN, an AI-powered thermal camera and \nfire prevention company targeting industrial manufacturers.\n\nBrand voice guidelines:\n{{ $('Brand Voice Agent').item.json.output }}\n\nWrite a blog post introduction using these details:\n- Topic: {{ $('Content Brief Input').item.json['Topic'] }}\n- Target Audience: {{ $('Content Brief Input').item.json['Target Audience'] }}\n- Key Message: {{ $('Content Brief Input').item.json['Key Message'] }}\n- Tone: {{ $('Content Brief Input').item.json['Tone'] }}\n\nRules:\n- 150-200 words\n- Open with a striking industry statistic or alarming fact\n- Establish the problem clearly by paragraph 2\n- End with a transition sentence that pulls the reader into the article\n- No generic openers like \"In today's world\" or \"As technology evolves\"\n\nReturn ONLY valid JSON:\n{\n  \"content_type\": \"Blog Introduction\",\n  \"headline\": \"SEO-optimized blog title\",\n  \"meta_description\": \"under 155 characters\",\n  \"introduction\": \"full blog intro here\",\n  \"word_count\": 000\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        944,
+        240
+      ],
+      "id": "44ee5b20-5dd1-43b3-ba9f-803c738f16f4",
+      "name": "Blog Content Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        384
+      ],
+      "id": "57583fdf-387f-4312-8386-a42860cbc4b1",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a senior B2B content strategist and quality reviewer for AVIAN, \nan AI-powered thermal camera and fire prevention company.\n\nReview the following content draft and score it across four dimensions.\nBe honest and strict — scores of 9-10 should be rare and earned.\n\nContent draft to review:\n{{ $json.output }}\n\nBrand voice guidelines used:\n{{ $('Brand Voice Agent').item.json.output }}\n\nOriginal brief:\n- Content Type: {{ $('Content Brief Input').item.json['Content Type'] }}\n- Topic: {{ $('Content Brief Input').item.json['Topic'] }}\n- Target Audience: {{ $('Content Brief Input').item.json['Target Audience'] }}\n- Key Message: {{ $('Content Brief Input').item.json['Key Message'] }}\n\nScore each dimension 1-10:\n- Clarity: Is it immediately clear what this is about and who it's for?\n- Brand Voice Match: Does it match AVIAN's tone, vocabulary, and style?\n- Specificity: Does it reference specific details or is it generic filler?\n- CTA Strength: Is the call to action specific, compelling, and singular?\n\nReturn ONLY valid JSON:\n{\n  \"clarity_score\": 0,\n  \"brand_voice_score\": 0,\n  \"specificity_score\": 0,\n  \"cta_score\": 0,\n  \"overall_score\": 0,\n  \"passes_quality_gate\": true,\n  \"reviewer_notes\": \"2-3 sentences of specific feedback\",\n  \"recommended_changes\": \"specific edits if any, or 'None' if passes\"\n}\n\npasses_quality_gate should be true only if ALL four scores are 7 or above.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "b1c2eab3-9859-4451-9363-269ea4c76704",
+      "name": "Quality Critic Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        160
+      ],
+      "id": "ebd2ac82-73f4-41c7-aafd-2d2a83a21821",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "MFfOfRdfMyEl7oVu",
+          "name": "SSS OpenAI Production Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Grab whichever content agent fired ──────────────────────────\nconst contentRaw = $('Carry Content Forward').first().json.content_agent_output || '';\n\n// ── Grab quality scores (already parsed by Parse Quality Scores) ──\nconst qualityJson = $input.first().json;\n\n// ── Grab original brief ──────────────────────────────────────────\nconst briefData = $('Content Brief Input').first().json;\n\n// ── Parse content JSON ───────────────────────────────────────────\nlet contentParsed = {};\ntry {\n  const match = contentRaw.match(/\\{[\\s\\S]*\\}/);\n  contentParsed = match ? JSON.parse(match[0]) : {};\n} catch(e) {\n  contentParsed = { \n    full_post: contentRaw, \n    body: contentRaw, \n    introduction: contentRaw \n  };\n}\n\n// ── Return final bundled object ──────────────────────────────────\nreturn [{\n  json: {\n    Content_Type:          briefData['Content Type']   || '',\n    Topic:                 briefData['Topic']           || '',\n    Target_Audience:       briefData['Target Audience'] || '',\n    Key_Message:           briefData['Key Message']     || '',\n    Tone:                  briefData['Tone']             || '',\n    Content_Output:        contentParsed.full_post || contentParsed.body || contentParsed.introduction || contentRaw,\n    Subject_Lines:         Array.isArray(contentParsed.subject_lines) ? contentParsed.subject_lines.join(' | ') : '',\n    Headline:              contentParsed.headline || '',\n    Clarity_Score:         qualityJson.clarity_score         || 0,\n    Brand_Voice_Score:     qualityJson.brand_voice_score     || 0,\n    Specificity_Score:     qualityJson.specificity_score     || 0,\n    CTA_Score:             qualityJson.cta_score             || 0,\n    Overall_Quality_Score: qualityJson.overall_score         || 0,\n    Passes_Quality_Gate:   qualityJson.passes_quality_gate   || false,\n    Reviewer_Notes:        qualityJson.reviewer_notes        || '',\n    Recommended_Changes:   qualityJson.recommended_changes   || '',\n    Generated_At:          new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        0
+      ],
+      "id": "9d4cf26f-4e02-4b1a-ac7d-a0f505bbd265",
+      "name": "Bundle Final Output"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "hans.stewart.contact@gmail.com",
+        "subject": "=[AVIAN] Content Draft Ready — {{ $json.Content_Type }}: {{ $json.Topic }}",
+        "message": "=A new content draft has been generated and scored by the AVIAN Content Pipeline.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nBRIEF DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nContent Type: {{ $json.Content_Type }}\nTopic: {{ $json.Topic }}\nTarget Audience: {{ $json.Target_Audience }}\nTone: {{ $json.Tone }}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nQUALITY SCORES\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nOverall Score: {{ $json.Overall_Quality_Score }}/10\nClarity: {{ $json.Clarity_Score }}/10\nBrand Voice: {{ $json.Brand_Voice_Score }}/10\nSpecificity: {{ $json.Specificity_Score }}/10\nCTA Strength: {{ $json.CTA_Score }}/10\nQuality Gate: {{ $json.Passes_Quality_Gate }}\n\nReviewer Notes: {{ $json.Reviewer_Notes }}\nRecommended Changes: {{ $json.Recommended_Changes }}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nCONTENT DRAFT\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n{{ $json.Content_Output }}\n\n{{ $json.Subject_Lines }}\n{{ $json.Headline }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2448,
+        0
+      ],
+      "id": "d344970f-f2f0-4224-9f87-6dfe1431171d",
+      "name": "Human Approval Gate",
+      "webhookId": "ddd3b618-cacd-441f-b020-39f106191f31",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "T5CcMwlrQhZhf1Qr",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19r8qZjwIkFDT1pup3PAqyP3fMp3rV_EqY51w8z5JXtU/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19r8qZjwIkFDT1pup3PAqyP3fMp3rV_EqY51w8z5JXtU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Content_Type": "={{ $('Bundle Final Output').item.json.Content_Type }}",
+            "Topic": "={{ $('Bundle Final Output').item.json.Topic }}",
+            "Target_Audience": "={{ $('Bundle Final Output').item.json.Target_Audience }}",
+            "Key_Message": "={{ $('Bundle Final Output').item.json.Key_Message }}",
+            "Tone": "={{ $('Bundle Final Output').item.json.Tone }}",
+            "Content_Output": "={{ $('Bundle Final Output').item.json.Content_Output }}",
+            "Subject_Lines": "={{ $('Bundle Final Output').item.json.Subject_Lines }}",
+            "Headline": "={{ $('Bundle Final Output').item.json.Headline }}",
+            "Clarity_Score": "={{ $('Bundle Final Output').item.json.Clarity_Score }}",
+            "Brand_Voice_Score": "={{ $('Bundle Final Output').item.json.Brand_Voice_Score }}",
+            "Specificity_Score": "={{ $('Bundle Final Output').item.json.Specificity_Score }}",
+            "CTA_Score": "={{ $('Bundle Final Output').item.json.CTA_Score }}",
+            "Overall_Quality_Score": "={{ $('Bundle Final Output').item.json.Overall_Quality_Score }}",
+            "Passes_Quality_Gate": "={{ $('Bundle Final Output').item.json.Passes_Quality_Gate }}",
+            "Reviewer_Notes": "={{ $('Bundle Final Output').item.json.Reviewer_Notes }}",
+            "Recommended_Changes": "={{ $('Bundle Final Output').item.json.Recommended_Changes }}",
+            "Approval_Status": "={{ $('Bundle Final Output').item.json.Passes_Quality_Gate === true ? 'Approved' : 'Failed Quality Gate' }}",
+            "Generated_At": "={{ $('Bundle Final Output').item.json.Generated_At }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Content_Type",
+              "displayName": "Content_Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target_Audience",
+              "displayName": "Target_Audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Key_Message",
+              "displayName": "Key_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tone",
+              "displayName": "Tone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content_Output",
+              "displayName": "Content_Output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject_Lines",
+              "displayName": "Subject_Lines",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Headline",
+              "displayName": "Headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clarity_Score",
+              "displayName": "Clarity_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brand_Voice_Score",
+              "displayName": "Brand_Voice_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Specificity_Score",
+              "displayName": "Specificity_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTA_Score",
+              "displayName": "CTA_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Overall_Quality_Score",
+              "displayName": "Overall_Quality_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Passes_Quality_Gate",
+              "displayName": "Passes_Quality_Gate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reviewer_Notes",
+              "displayName": "Reviewer_Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recommended_Changes",
+              "displayName": "Recommended_Changes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval_Status",
+              "displayName": "Approval_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Generated_At",
+              "displayName": "Generated_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2624,
+        0
+      ],
+      "id": "bbee9008-634a-447b-914e-38f019d266ac",
+      "name": "Content Library",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Y2e4WTPx7gzBUT2e",
+          "name": "SSS Google Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf56505e-20ab-4edc-99c0-fdd2a0ccc31a",
+              "leftValue": "={{ $json.passes_quality_gate.toString() }}",
+              "rightValue": "true (Boolean type)",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        0
+      ],
+      "id": "e55aa127-83f9-44a7-be19-5ed951f1543b",
+      "name": "Quality Gate Check"
+    },
+    {
+      "parameters": {
+        "content": "[AVIAN] Content Generation Pipeline v1.0\nClient: AVIAN Technologies\nOwner: Hans Stewart\nLast Updated: May 2026\nStatus: Production Active\n\nArchitecture: Form trigger → Live brand voice extraction (Jina/avian-iot.com) \n→ Channel routing (LinkedIn / Email / Blog) → Specialist content agents \n→ Quality scoring gate → Human approval via Gmail → Content library output\n\nNote: Brand voice is pulled live from AVIAN's website on every run — \nno static brand guide needed. Quality gate requires all 4 scores ≥ 7 \nbefore approval email fires.",
+        "height": 240,
+        "width": 592
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -656
+      ],
+      "id": "011d7708-9bc0-4704-8096-4bc6b4c01e95",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Human-in-the-Loop Approval Gate\nWorkflow pauses here until human approves or rejects.\nApproval email includes full draft + all 4 quality scores.\nOnly fires if Quality Critic scores all dimensions ≥ 7.\nNothing writes to Content Library without explicit approval.\nThis is intentional — governed AI, not blind automation.",
+        "height": 224,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        -256
+      ],
+      "id": "f7e40d0a-5600-4e04-ad2f-609bf5ebcf6a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || \"\";\n\nlet parsed = {};\ntry {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(match[0]);\n} catch(e) {\n  parsed = {\n    clarity_score: 0,\n    brand_voice_score: 0,\n    specificity_score: 0,\n    cta_score: 0,\n    overall_score: 0,\n    passes_quality_gate: false,\n    reviewer_notes: \"Parse error — quality check failed\",\n    recommended_changes: \"Regenerate content\"\n  };\n}\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    clarity_score: parsed.clarity_score || 0,\n    brand_voice_score: parsed.brand_voice_score || 0,\n    specificity_score: parsed.specificity_score || 0,\n    cta_score: parsed.cta_score || 0,\n    overall_score: parsed.overall_score || 0,\n    passes_quality_gate: parsed.passes_quality_gate === true,\n    reviewer_notes: parsed.reviewer_notes || \"\",\n    recommended_changes: parsed.recommended_changes || \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        0
+      ],
+      "id": "f8345519-f0c8-4cfb-a51e-77a9c3eab48f",
+      "name": "Parse Quality Scores"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$input.first().json,\n    quality_failure: true,\n    failure_summary: `Quality gate failed. Scores — Clarity: ${$input.first().json.clarity_score}, Brand Voice: ${$input.first().json.brand_voice_score}, Specificity: ${$input.first().json.specificity_score}, CTA: ${$input.first().json.cta_score}. Notes: ${$input.first().json.reviewer_notes}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        80
+      ],
+      "id": "6c61efa4-f438-42f7-a3e3-cee969f7f6fb",
+      "name": "Flag Quality Failure"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node runs right after whichever content agent fired\n// It preserves the content output in a field that travels with the data\nreturn [{\n  json: {\n    ...$input.first().json,\n    content_agent_output: $input.first().json.output || \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        0
+      ],
+      "id": "b7e66c71-ab02-4e89-be96-cfd9a0b58cf2",
+      "name": "Carry Content Forward"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Content Brief Input": {
+      "main": [
+        [
+          {
+            "node": "Scrape AVIAN Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape AVIAN Website": {
+      "main": [
+        [
+          {
+            "node": "Brand Voice Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Brand Voice Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand Voice Agent": {
+      "main": [
+        [
+          {
+            "node": "Content Type Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Type Router": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Content Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Content Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Blog Content Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Content Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Content Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Blog Content Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Content Agent": {
+      "main": [
+        [
+          {
+            "node": "Carry Content Forward",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Content Agent": {
+      "main": [
+        [
+          {
+            "node": "Carry Content Forward",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blog Content Agent": {
+      "main": [
+        [
+          {
+            "node": "Carry Content Forward",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Quality Critic Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Critic Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Quality Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bundle Final Output": {
+      "main": [
+        [
+          {
+            "node": "Human Approval Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Approval Gate": {
+      "main": [
+        [
+          {
+            "node": "Content Library",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Gate Check": {
+      "main": [
+        [
+          {
+            "node": "Bundle Final Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Flag Quality Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Quality Scores": {
+      "main": [
+        [
+          {
+            "node": "Quality Gate Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag Quality Failure": {
+      "main": [
+        [
+          {
+            "node": "Bundle Final Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carry Content Forward": {
+      "main": [
+        [
+          {
+            "node": "Quality Critic Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "50991d59-cee9-4467-b644-5434e21b06fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6e9e5a2998f849134584432b241a4eaeeab7205a55684dc0fdfae62f985ba0e2"
+  },
+  "id": "JCLaubAs5WUUtJz1",
+  "tags": []
+}
